@@ -532,11 +532,14 @@ def wcoher(signal1, signal2,  dt, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
         Eduardo dos Santos Pereira
         email: pereira.somoza@gmail.com
     """
-    
-    std1 = signal1.std()                      # Standard deviation
-    signal1 = (signal1 - signal1.mean()) / std1 
-    std2 = signal2.std()                      # Standard deviation
-    signal2 = (signal2 - signal2.mean()) / std2
+    if(signal1.mean() == 0.0 and signal2.mean() == 0.0):
+        pass
+    else:
+        print 'oi'
+        std1 = signal1.std()                      # Standard deviation
+        signal1 = (signal1 - signal1.mean()) / std1 
+        std2 = signal2.std()                      # Standard deviation
+        signal2 = (signal2 - signal2.mean()) / std2
     
     wave1, scales1, freqs1, coi1, fft1, fftfreqs1 = cwt(signal1, dt, dj, s0, J,
                                                               wavelet)
@@ -547,6 +550,9 @@ def wcoher(signal1, signal2,  dt, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
     Sxy = wave1*conjugate(wave2)
     Sxx = wave1*conjugate(wave1)
     Syy = wave2*conjugate(wave2)
+
     
-    wc = (nAbs(Sxy)**2.0)/(Sxx*Syy) #wavelet coherence between the sginal1 and signal2
+    
+    wc = (Sxy.real)/(sqrt(Sxx.real*Syy.real)) #wavelet coherence between the sginal1 and signal2
+
     return wc
