@@ -19,6 +19,10 @@ DISCLAIMER
 AUTHOR
     Sebastian Krieger
     email: sebastian@nublia.com
+    
+    Modify version:
+        Eduardo dos Santos Pereira
+        email: pereira.somoza@gmail.com
 
 REVISION
     2 (2011-04-28 17:57 -0300)
@@ -523,6 +527,10 @@ def wcoher(signal1, signal2,  dt, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
         wc - the wavelet coherence between the sginal1 and signal2
         
         Refe: Bigot et al., 2011, NeuroImage, vol. 55, pag. 1504-1518.
+        
+    written by:
+        Eduardo dos Santos Pereira
+        email: pereira.somoza@gmail.com
     """
     
     std1 = signal1.std()                      # Standard deviation
