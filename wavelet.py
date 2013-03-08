@@ -501,15 +501,18 @@ def significance(signal, dt, scales, sigma_test=0, alpha=0.,
     return (signif, fft_theor)
     
     
-def wcoher(signal1, signal2,  dt, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
+def wcoher(signal1, signal2,  dt, delay, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
     """ wavelet coherence for the input signals signal1 and signal2 using the wavelet specified in wavelet at the scales in Scales. 
     The input signals must be real-valued and equal in length.
 
     PARAMETERS
-        signal (array like) :
+        signal1,signal2 (array like) :
             Input signal array
         dt (float) :
             Sample spacing.
+        delay (float):
+            Delay to analise the signal 2 with respect to signal 1
+        
         dj (float, optional) :
             Spacing between discrete scales. Default value is 0.25.
             Smaller values will result in better scale resolution, but
@@ -526,7 +529,10 @@ def wcoher(signal1, signal2,  dt, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
     RETURNS
         wc - the wavelet coherence between the sginal1 and signal2
         
-        Refe: Bigot et al., 2011, NeuroImage, vol. 55, pag. 1504-1518.
+        
+        Ref.: 
+            Labat, D., 2005, Journal of Hydrology, vol. 314, pag. 275-288.
+            Bigot et al., 2011, NeuroImage, vol. 55, pag. 1504-1518.
         
     written by:
         Eduardo dos Santos Pereira
@@ -535,7 +541,6 @@ def wcoher(signal1, signal2,  dt, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
     if(signal1.mean() == 0.0 and signal2.mean() == 0.0):
         pass
     else:
-        print 'oi'
         std1 = signal1.std()                      # Standard deviation
         signal1 = (signal1 - signal1.mean()) / std1 
         std2 = signal2.std()                      # Standard deviation
@@ -543,11 +548,13 @@ def wcoher(signal1, signal2,  dt, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
     
     wave1, scales1, freqs1, coi1, fft1, fftfreqs1 = cwt(signal1, dt, dj, s0, J,
                                                               wavelet)
-                                                              
     wave2, scales2, freqs2, coi2, fft2, fftfreqs2 = cwt(signal2, dt, dj, s0, J,
                                                               wavelet)
                                                               
-    Sxy = wave1*conjugate(wave2)
+    wave12, scales12, freqs12, coi12, fft12, fftfreqs12 = cwt(signal2, dt+delay, dj, s0, J,
+                                                              wavelet)
+                                                              
+    Sxy = wave1*conjugate(wave12)
     Sxx = wave1*conjugate(wave1)
     Syy = wave2*conjugate(wave2)
 
@@ -555,4 +562,4 @@ def wcoher(signal1, signal2,  dt, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
     
     wc = (Sxy.real)/(sqrt(Sxx.real*Syy.real)) #wavelet coherence between the sginal1 and signal2
 
-    return wc
+    return wc, freqs1
