@@ -39,6 +39,7 @@ from numpy import (arange, ceil, concatenate, conjugate, cos, exp, isnan, log,
                    log2, ones, pi, prod, real, sqrt, zeros, polyval)
 from numpy.fft import fft, ifft, fftfreq
 from numpy.lib.polynomial import polyval
+from numpy import abs as nAbs
 from pylab import find
 from scipy.special import gamma
 from scipy.stats import chi2
@@ -494,3 +495,50 @@ def significance(signal, dt, scales, sigma_test=0, alpha=0.,
         raise Exception, 'sigma_test must be either 0, 1, or 2.'
 
     return (signif, fft_theor)
+    
+    
+def wcoher(signal1, signal2,  dt, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
+    """ wavelet coherence for the input signals signal1 and signal2 using the wavelet specified in wavelet at the scales in Scales. 
+    The input signals must be real-valued and equal in length.
+
+    PARAMETERS
+        signal (array like) :
+            Input signal array
+        dt (float) :
+            Sample spacing.
+        dj (float, optional) :
+            Spacing between discrete scales. Default value is 0.25.
+            Smaller values will result in better scale resolution, but
+            slower calculation and plot.
+        s0 (float, optional) :
+            Smallest scale of the wavelet. Default value is 2*dt.
+        J (float, optional) :
+            Number of scales less one. Scales range from s0 up to
+            s0 * 2**(J * dj), which gives a total of (J + 1) scales.
+            Default is J = (log2(N*dt/so))/dj.
+        wavelet (class, optional) :
+            Mother wavelet class. Default is Morlet()
+            
+    RETURNS
+        wc - the wavelet coherence between the sginal1 and signal2
+        
+        Refe: Bigot et al., 2011, NeuroImage, vol. 55, pag. 1504-1518.
+    """
+    
+    std1 = signal1.std()                      # Standard deviation
+    signal1 = (signal1 - signal1.mean()) / std1 
+    std2 = signal2.std()                      # Standard deviation
+    signal2 = (signal2 - signal2.mean()) / std2
+    
+    wave1, scales1, freqs1, coi1, fft1, fftfreqs1 = cwt(signal1, dt, dj, s0, J,
+                                                              wavelet)
+                                                              
+    wave2, scales2, freqs2, coi2, fft2, fftfreqs2 = cwt(signal2, dt, dj, s0, J,
+                                                              wavelet)
+                                                              
+    Sxy = wave1*conjugate(wave2)
+    Sxx = wave1*conjugate(wave1)
+    Syy = wave2*conjugate(wave2)
+    
+    wc = (nAbs(Sxy)**2.0)/(Sxx*Syy) #wavelet coherence between the sginal1 and signal2
+    return wc
