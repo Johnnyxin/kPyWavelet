@@ -40,7 +40,8 @@ __version__ = '$Revision: 2 $'
 # $Source$
 
 from numpy import (arange, ceil, concatenate, conjugate, cos, exp, isnan, log,
-                   log2, ones, pi, prod, real, sqrt, zeros, polyval)
+                   log2, ones, pi, prod, real, sqrt, zeros, polyval, array, fix, dtype, modf, 
+                   around, meshgrid)
 from numpy.fft import fft, ifft, fftfreq
 from numpy.lib.polynomial import polyval
 from numpy import abs as nAbs
@@ -48,6 +49,8 @@ from pylab import find
 from scipy.special import gamma
 from scipy.stats import chi2
 from scipy.special.orthogonal import hermitenorm
+from scipy.signal import convolve2d
+from scipy.ndimage import convolve
 
 
 class Morlet:
@@ -501,8 +504,8 @@ def significance(signal, dt, scales, sigma_test=0, alpha=0.,
     return (signif, fft_theor)
     
     
-def wcoher(signal1, signal2,  dt, delay, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
-    """ wavelet coherence for the input signals signal1 and signal2 using the wavelet specified in wavelet at the scales in Scales. 
+def xwt(signal1, signal2,  dt, dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
+    """ cross wavelet transform for the input signals signal1 and signal2 using the wavelet specified in wavelet at the scales in Scales. 
     The input signals must be real-valued and equal in length.
 
     PARAMETERS
@@ -510,8 +513,6 @@ def wcoher(signal1, signal2,  dt, delay, dj=0.25, s0=-1, J=-1, wavelet=Morlet())
             Input signal array
         dt (float) :
             Sample spacing.
-        delay (float):
-            Delay to analise the signal 2 with respect to signal 1
         
         dj (float, optional) :
             Spacing between discrete scales. Default value is 0.25.
@@ -527,7 +528,25 @@ def wcoher(signal1, signal2,  dt, delay, dj=0.25, s0=-1, J=-1, wavelet=Morlet())
             Mother wavelet class. Default is Morlet()
             
     RETURNS
-        wc - the wavelet coherence between the sginal1 and signal2
+        Wxy,Wxx, Wyy -  The wavelet cross spectrum between the sginal1 and signal2,
+                                     the sginal1 and signal1, and, the sginal2 and signal2
+        
+        sj (array like) :
+            Vector of scale indices given by sj = s0 * 2**(j * dj),
+            j={0, 1, ..., J}.
+        freqs (array like) :
+            Vector of Fourier frequencies (in 1 / time units) that
+            corresponds to the wavelet scales.
+        coi (array like) :
+            Returns the cone of influence, which is a vector of N
+            points containing the maximum Fourier period of useful
+            information at that particular time. Periods greater than
+            those are subject to edge effects.
+        fft (array like) :
+            Normalized fast Fourier transform of the input signal.
+        fft_freqs (array like):
+            Fourier frequencies (in 1/time units) for the calculated
+            FFT spectrum.
         
         
         Ref.: 
@@ -551,15 +570,104 @@ def wcoher(signal1, signal2,  dt, delay, dj=0.25, s0=-1, J=-1, wavelet=Morlet())
     wave2, scales2, freqs2, coi2, fft2, fftfreqs2 = cwt(signal2, dt, dj, s0, J,
                                                               wavelet)
                                                               
-    wave12, scales12, freqs12, coi12, fft12, fftfreqs12 = cwt(signal2, dt+delay, dj, s0, J,
-                                                              wavelet)
                                                               
-    Sxy = wave1*conjugate(wave12)
-    Sxx = wave1*conjugate(wave1)
-    Syy = wave2*conjugate(wave2)
+    Wxy = wave1*conjugate(wave2)
+    Wxx = wave1*conjugate(wave1)
+    Wyy = wave2*conjugate(wave2)
+
+
+    return Wxy, Wxx, Wyy  , scales1, freqs1, coi1, coi2
+    
+def wtc(signal1, signal2,  dt,  dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
+    """ wavelet coherence  for the input signals  and signal2 using the wavelet specified in wavelet at the scales in Scales. 
+    The input signals must be real-valued and equal in length.
+
+    PARAMETERS
+        signal1,signal2 (array like) :
+            Input signal array
+        dt (float) :
+            Sample spacing.
+       
+        dj (float, optional) :
+            Spacing between discrete scales. Default value is 0.25.
+            Smaller values will result in better scale resolution, but
+            slower calculation and plot.
+        s0 (float, optional) :
+            Smallest scale of the wavelet. Default value is 2*dt.
+        J (float, optional) :
+            Number of scales less one. Scales range from s0 up to
+            s0 * 2**(J * dj), which gives a total of (J + 1) scales.
+            Default is J = (log2(N*dt/so))/dj.
+        wavelet (class, optional) :
+            Mother wavelet class. Default is Morlet()
+            
+    RETURNS
+        Rs -  The wavelet coherence between the sginal1 and signal2
+        
+        scales (array like) :
+            Vector of scale indices given returned by cwt function.
+        
+        Ref.: 
+            Labat, D., 2005, Journal of Hydrology, vol. 314, pag. 275-288.
+            Grinsted, A., Moore, J. C. and Jevreja, S., 2004, Nonlinear Processes in Geophysics,
+            11, 561.
+            Torrence, C., Webster, P. J., 1999, Journal of Climate,
+            12, 2679.
+        
+    written by:
+        Eduardo dos Santos Pereira
+        email: pereira.somoza@gmail.com
+    """
+    Wxy, Wxx, Wyy  , scales, freqs, coi, coi = xwt(signal1, signal2,  dt, dj, s0,  J, wavelet)
+    Sxy = wavelet.smoothwavelet(Wxy, dt, dj,scales)
+    Sxx = wavelet.smoothwavelet(abs(Wxx)**2.0, dt, dj,scales)
+    Syy = wavelet.smoothwavelet(abs(Wyy)**2.0, dt, dj,scales)
+    Rs = abs(Sxy)**2/(Sxx.real*Syy.real)
+    return Rs, scales
+    
+
+
+def smoothwavelet(wave, dt, dj, scales):
+    """
+    Smooth wavelete power spectrum function
+    Adapted from the: http://cell.biophys.msu.ru/static/swan/
+    
+    This function is the smoothing operator, that was described by 
+    Grinsted, A., et al., (2004). Smooth ing in both time and scale
+    PARAMETERS:
+        wave - The continuos wavelet transform - (Applied only for Morlet Wavelet)
+        dt (float) :
+            Sample spacing.        
+        dj (float, optional) :
+            Spacing between discrete scales. Default value is 0.25.
+            Smaller values will result in better scale resolution, but
+            slower calculation and plot.
+        scales (array like) :
+            Vector of scale indices given returned by cwt function.
+    RETURNS:
+        W -  The soomthed and normalized wavelet transformed array
+        
+    Ref.
+        Grinsted, A., Moore, J. C. and Jevreja, S., 2004, Nonlinear Processes in Geophysics,
+        11, 561.
+        Torrence, C., Webster, P. J., 1999, Journal of Climate,
+        12, 2679.
+        
+    Addapted by:
+        Eduardo dos Santos Pereira
+        email: pereira.somoza@gmail.com
+    
+    """
+    G = lambda omega,s: exp(-0.5 * s**2.0 *omega**2.0) 
+
+    W = zeros(wave.shape, 'complex')
+    fftom = 2*pi*fftfreq(wave.shape[1], dt) 
+
+    for n,s in enumerate(scales):
+        W[n,:] = ifft(fft(wave[n,:]) * G(fftom, s/dt))
+    return W
+    
 
     
     
-    wc = (Sxy.real)/(sqrt(Sxx.real*Syy.real)) #wavelet coherence between the sginal1 and signal2
-
-    return wc, freqs1
+    
