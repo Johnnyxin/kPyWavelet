@@ -606,6 +606,9 @@ def wtc(signal1, signal2,  dt,  dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
         
         scales (array like) :
             Vector of scale indices given returned by cwt function.
+         freqs (array like) :
+            Vector of Fourier frequencies (in 1 / time units) that
+            corresponds to the wavelet scales.
         
         Ref.: 
             Labat, D., 2005, Journal of Hydrology, vol. 314, pag. 275-288.
@@ -619,11 +622,11 @@ def wtc(signal1, signal2,  dt,  dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
         email: pereira.somoza@gmail.com
     """
     Wxy, Wxx, Wyy  , scales, freqs, coi, coi = xwt(signal1, signal2,  dt, dj, s0,  J, wavelet)
-    Sxy = wavelet.smoothwavelet(Wxy, dt, dj,scales)
-    Sxx = wavelet.smoothwavelet(abs(Wxx)**2.0, dt, dj,scales)
-    Syy = wavelet.smoothwavelet(abs(Wyy)**2.0, dt, dj,scales)
+    Sxy = smoothwavelet(Wxy, dt, dj,scales)
+    Sxx = smoothwavelet(abs(Wxx)**2.0, dt, dj,scales)
+    Syy = smoothwavelet(abs(Wyy)**2.0, dt, dj,scales)
     Rs = abs(Sxy)**2/(Sxx.real*Syy.real)
-    return Rs, scales
+    return Rs, scales, freqs
     
 
 
