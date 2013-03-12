@@ -3,7 +3,7 @@ of routines for wavelet transform and statistical analysis via FFT
 algorithm. This module references to the numpy, scipy and pylab Python
 packages.
 
-Now are inclued the wavelet cross-spectrun 
+Now are inclued the Smooth operator, wavelet cross-spectrun and coherence
 wavelet
 
 The sample script (sample.py) illustrates the use of the wavelet and
@@ -24,8 +24,8 @@ DISCLAIMER
 INSTALLATION (It is necessary to have setuptools):
     python setup.py install
 
-TODO
-   Smooth operator and coherence
+
+
 AUTHOR
     Sebastian Krieger
     email: sebastian@nublia.com

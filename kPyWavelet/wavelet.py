@@ -630,7 +630,7 @@ def wtc(signal1, signal2,  dt,  dj=0.25, s0=-1, J=-1, wavelet=Morlet()):
     
 
 
-def smoothwavelet(wave, dt, dj, scales):
+def smoothwavelet(wave, dt, dj, scales): #Not working ! TODO
     """
     Smooth wavelete power spectrum function
     Adapted from the: http://cell.biophys.msu.ru/static/swan/
