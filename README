@@ -21,11 +21,8 @@ DISCLAIMER
     made. This routine is provided as is without any express or implied
     warranties whatsoever.
 
-INSTALLATION
-    Copy all the contents into a location included in the Python search
-    path. On Linux distribution one such option is
-
-        ~/.local/lib/python2.x/site-packages/kPyWavelet
+INSTALLATION (It is necessary to have setuptools):
+    python setup.py install
 
 
 

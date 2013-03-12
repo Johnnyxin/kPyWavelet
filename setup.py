@@ -17,7 +17,7 @@ setup(
     license = "BSD",
     keywords = "wavelet signal analises ",
     url = "https://github.com/duducosmos/kPyWavelet",
-    packages=['sample'],
+    packages=['kPyWavelet','kPyWavelet/sample'],
     long_description=read('README'),
     classifiers=[
         "Development Status :: 3 - Alpha",
